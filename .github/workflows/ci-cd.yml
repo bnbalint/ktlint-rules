@@ -66,6 +66,9 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+          server-id: github # Must match the id in your pom.xml distributionManagement
+          settings-path: ${{ github.workspace }} # Location to save the auto-generated settings.xml
+
           cache: maven
 
       - name: Download built jars from build job
