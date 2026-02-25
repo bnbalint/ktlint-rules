@@ -10,9 +10,9 @@ on:
   workflow_dispatch: {}
 
 env:
-  MAVEN_FLAGS: "--no-transfer-progress --batch-mode --update-snapshots -s ci_settings.xml"
+  MAVEN_FLAGS: "--no-transfer-progress --batch-mode --update-snapshots"
   MAVEN_PROPERTIES: "-Dmaven.repo.local=${{ github.workspace }}/.m2/repository"
-  GITHUB_PACKAGES_REPOSITORY_URL: "https://maven.pkg.github.com/OWNER/REPOSITORY" # TODO: replace OWNER/REPOSITORY
+  GITHUB_PACKAGES_REPOSITORY_URL: "https://maven.pkg.github.com/bnbalint/packages"
 
 jobs:
   build-and-test:
