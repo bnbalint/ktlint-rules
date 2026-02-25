@@ -82,4 +82,18 @@ jobs:
       - name: Deploy downloaded jars to GitHub Packages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: mvn $MAVEN_FLAGS $MAVEN_PROPERTIES  deploy -Dmaven.test.skip=true
+        run: |
+          set -euo pipefail
+          shopt -s globstar || true
+          found=0
+          for f in downloaded-jars/**/*.jar downloaded-jars/*.jar; do
+            if [ -f "$f" ]; then
+              found=1
+              echo "Deploying $f"
+              mvn $MAVEN_FLAGS $MAVEN_PROPERTIES deploy:deploy-file -Dfile="$f" -DpomFile=$(pwd)/pom.xml -DrepositoryId=github -Durl="$GITHUB_PACKAGES_REPOSITORY_URL" || exit 1
+            fi
+          done
+          if [ $found -eq 0 ]; then
+            echo "No jars found in downloaded-jars" >&2
+            exit 1
+          fi
