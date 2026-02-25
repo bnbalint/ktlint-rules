@@ -77,8 +77,7 @@ jobs:
       - name: List downloaded-jars
         run: |
           echo "PWD: $(pwd)"
-          echo ls -la:" 
-          ls -la 
+          echo ls -la: $(ls -la)" 
 
 
 
