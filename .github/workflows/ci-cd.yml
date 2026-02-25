@@ -79,4 +79,4 @@ jobs:
       - name: Deploy downloaded jars to GitHub Packages
         env:
           GITHUB_TOKEN: ${{ secrets.PACKAGE_UPLOAD_TOKEN }}
-        run: mvn $MAVEN_FLAGS $MAVEN_PROPERTIES  deploy -Dmaven.test.skip=true
+        run: mvn $MAVEN_FLAGS $MAVEN_PROPERTIES deploy -Dmaven.test.skip=true
