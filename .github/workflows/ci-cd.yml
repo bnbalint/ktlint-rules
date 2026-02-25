@@ -1,0 +1,93 @@
+name: CI/CD - Build, Test, Publish
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+  workflow_dispatch: {}
+
+env:
+  MAVEN_FLAGS: "--no-transfer-progress --batch-mode --update-snapshots -s ci_settings.xml"
+  MAVEN_PROPERTIES: "-Dmaven.repo.local=${{ github.workspace }}/.m2/repository"
+  GITHUB_PACKAGES_REPOSITORY_URL: "https://maven.pkg.github.com/OWNER/REPOSITORY" # TODO: replace OWNER/REPOSITORY
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    outputs:
+      jars-path: ${{ steps.upload.outputs.artifact-path || '' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Cache Maven local repository
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Build and test with Maven
+        run: mvn $MAVEN_FLAGS $MAVEN_PROPERTIES clean package
+
+      - name: Upload built jars
+        id: upload
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maven-jars
+          path: '**/target/*.jar'
+
+  publish:
+    name: Publish Artifact
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Download built jars from build job
+        uses: actions/download-artifact@v4
+        with:
+          name: maven-jars
+          path: downloaded-jars
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Configure Maven for GitHub Packages
+        run: |
+          echo "Using GitHub Packages repository URL: $GITHUB_PACKAGES_REPOSITORY_URL"
+          # Ensure ci_settings.xml is configured with a <server> that uses a token such as GITHUB_TOKEN or a custom PAT
+
+      - name: Deploy downloaded jars to GitHub Packages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # Deploy each downloaded jar using Maven deploy:deploy-file so we don't rebuild
+          for f in downloaded-jars/**/**.jar downloaded-jars/*.jar; do
+            if [ -f "$f" ]; then
+              echo "Deploying $f"
+              mvn $MAVEN_FLAGS $MAVEN_PROPERTIES deploy:deploy-file -Dfile="$f" -DpomFile=$(pwd)/pom.xml -DrepositoryId=github -Durl="$GITHUB_PACKAGES_REPOSITORY_URL" || exit 1
+            fi
+          done
