@@ -1,12 +1,5 @@
-name: CI/CD - Build, Test, Publish
-
+name: Manual Publish
 on:
-  push:
-    branches:
-      - '**'
-  pull_request:
-    branches:
-      - '**'
   workflow_dispatch: {}
 
 env:
