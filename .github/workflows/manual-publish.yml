@@ -1,9 +1,13 @@
 name: Manual Publish
+
+
+# This job runs manually when you click it from the Actions page
+# You can choose whether to publish the artifact or not, based on the value of the checkbox
 on:
   workflow_dispatch:
     inputs:
       runPublish:
-        description: "Whether to publish the artifact"
+        description: "Publish the artifact"
         required: true
         default: true
         type: boolean
@@ -12,7 +16,6 @@ on:
 env:
   MAVEN_FLAGS: "--no-transfer-progress --batch-mode --update-snapshots"
   MAVEN_PROPERTIES: "-Dmaven.repo.local=${{ github.workspace }}/.m2/repository"
-  GITHUB_PACKAGES_REPOSITORY_URL: "https://maven.pkg.github.com/bnbalint/packages"
 
 jobs:
   build-and-test:
@@ -78,5 +81,5 @@ jobs:
 
       - name: Deploy downloaded jars to GitHub Packages
         env:
-          GITHUB_TOKEN: ${{ secrets.PACKAGE_UPLOAD_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: mvn $MAVEN_FLAGS $MAVEN_PROPERTIES deploy -Dmaven.test.skip=true
